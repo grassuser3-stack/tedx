@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#390C13">
+<title>Kind Passport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#A81C34;
+    --wine:#801A2B;
+    --deep:#390C13;
+    --black:#000000;
+    --paper:#F7EFE6;
+    --ink:#2A0A10;
+    --muted:#8A5A62;
+    --white:#FFFFFF;
+    --script:'Allura', cursive;
+    --serif:'Cormorant Garamond', Georgia, serif;
+    --sans:'Inter', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--black)}
+  body{
+    font-family:var(--sans);
+    color:var(--white);
+    background:radial-gradient(120% 80% at 50% 25%, var(--wine) 0%, var(--deep) 60%, var(--black) 100%) fixed;
+    background-color:var(--deep);
+    min-height:100vh;min-height:100dvh;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* halftone texture like the poster */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:radial-gradient(rgba(0,0,0,.35) 1px, transparent 1.4px);
+    background-size:7px 7px;
+    -webkit-mask-image:linear-gradient(160deg, #000 0%, transparent 35%, transparent 65%, #000 100%);
+            mask-image:linear-gradient(160deg, #000 0%, transparent 35%, transparent 65%, #000 100%);
+    opacity:.7;
+  }
+  .wrap{
+    position:relative;z-index:1;width:100%;max-width:460px;margin:0 auto;
+    padding:max(20px, env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom));
+    min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  }
+  .screen{display:none;flex-direction:column;flex:1}
+  .screen.active{display:flex}
+
+  .brand{font-family:var(--sans);font-size:14px;line-height:1.15;letter-spacing:.01em}
+  .brand .ted{color:#E62B1E;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .brand .ted sup{font-size:10px;margin-left:1px}
+  .brand .youth{font-weight:700}
+
+  /* ---------- Shared bits ---------- */
+  label.lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+  input.field{
+    width:100%;font:500 18px var(--sans);color:var(--white);
+    background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.28);border-radius:14px;
+    padding:15px 16px;outline:none;transition:border-color .2s, background .2s;
+  }
+  input.field::placeholder{color:rgba(255,255,255,.45)}
+  input.field:focus{border-color:var(--white);background:rgba(0,0,0,.4)}
+  .btn{
+    appearance:none;border:0;cursor:pointer;font:600 16px var(--sans);
+    padding:16px 18px;border-radius:14px;background:var(--white);color:var(--red);
+    transition:transform .12s, opacity .2s, background .2s;
+  }
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.red{background:var(--red);color:var(--white)}
+  .btn.ghost{background:transparent;color:inherit;border:1px solid currentColor}
+  .linkish{background:none;border:0;color:rgba(255,255,255,.65);font:500 12px var(--sans);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:4px}
+  .fine{font-size:12px;opacity:.6;text-align:center;margin-top:14px}
+  .script{font-family:var(--script);font-weight:400}
+
+  /* ---------- 1. Welcome ---------- */
+  .welcome-grid{display:flex;flex-direction:column;flex:1}
+  .hero{
+    position:relative;margin:4px -16px 0;aspect-ratio:1/.74;overflow:hidden;
+    -webkit-mask-image:radial-gradient(75% 70% at 50% 48%, #000 55%, transparent 100%);
+            mask-image:radial-gradient(75% 70% at 50% 48%, #000 55%, transparent 100%);
+  }
+  .hero img{width:100%;height:auto;display:block;margin-top:-17%}
+  .title{font-size:clamp(52px,15vw,68px);line-height:.95;text-align:center;margin-top:-28px;position:relative;text-shadow:0 2px 18px rgba(0,0,0,.45)}
+  .tagline{font-family:var(--serif);font-size:19px;text-align:center;opacity:.9;margin-top:6px}
+  .form{margin-top:28px;display:flex;flex-direction:column;gap:12px}
+
+  /* ---------- 2. Character picker ---------- */
+  #pick{align-items:center;text-align:center}
+  #pick .brand{align-self:flex-start;text-align:left}
+  .pick-head{margin-top:22px}
+  .pick-head .script{font-size:clamp(44px,12vw,58px);line-height:1}
+  .pick-head p{font-family:var(--serif);font-size:18px;opacity:.85;margin-top:4px}
+  .carousel{position:relative;width:100%;max-width:400px;margin:22px auto 0;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+  .viewport{overflow:hidden;border-radius:28px}
+  .track{display:flex;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+  .slide{flex:0 0 100%;padding:0 2px}
+  .card{
+    background:var(--paper);border-radius:28px;aspect-ratio:1/1.08;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.4);
+  }
+  .card img{width:86%;flex:1;min-height:0;object-fit:contain;mix-blend-mode:multiply;pointer-events:none;-webkit-user-drag:none}
+  .card .ph{flex:1;width:100%;display:grid;place-items:center;color:var(--muted);font-size:13px;letter-spacing:.14em;text-transform:uppercase;border:2px dashed rgba(128,26,43,.3);border-radius:20px}
+  .card .cname{font-family:var(--serif);font-weight:700;font-size:26px;color:var(--deep);margin-top:6px}
+  .arrow{
+    position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;
+    border:0;cursor:pointer;background:var(--red);color:var(--white);display:grid;place-items:center;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);transition:transform .12s, background .2s;z-index:2;
+  }
+  .arrow:hover{background:var(--wine)}
+  .arrow:active{transform:translateY(-50%) scale(.94)}
+  .arrow.prev{left:-10px}
+  .arrow.next{right:-10px}
+  .arrow svg{width:22px;height:22px}
+  .dots{display:flex;gap:8px;justify-content:center;margin-top:18px}
+  .dots button{width:9px;height:9px;border-radius:99px;border:0;padding:0;background:rgba(255,255,255,.3);cursor:pointer;transition:width .25s, background .25s}
+  .dots button.on{width:26px;background:var(--white)}
+  .pick-actions{width:100%;max-width:400px;margin:24px auto 0;display:flex;flex-direction:column;gap:8px}
+
+  /* ---------- 3. Passport ---------- */
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start}
+  .passport-grid{display:flex;flex-direction:column;gap:18px;margin-top:18px}
+  .col{display:flex;flex-direction:column;gap:18px;min-width:0}
+
+  .idpage{
+    background:var(--paper);color:var(--ink);border-radius:18px;padding:18px;position:relative;overflow:hidden;
+    box-shadow:0 18px 40px rgba(0,0,0,.45);
+  }
+  .idpage::before{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:repeating-radial-gradient(circle at 110% -10%, transparent 0 9px, rgba(168,28,52,.07) 9px 10px);
+  }
+  .idhead{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--red);font-weight:600;position:relative}
+  .idbody{display:flex;gap:14px;margin-top:14px;position:relative}
+  .photo{width:88px;height:108px;border-radius:12px;flex:none;overflow:hidden;background:#fff;border:2px solid var(--red);display:grid;place-items:center;cursor:pointer;padding:0}
+  .photo img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:4px}
+  .fields{flex:1;min-width:0;display:grid;gap:8px;align-content:start}
+  .f small{display:block;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .f b{display:block;font-family:var(--serif);font-weight:700;font-size:22px;line-height:1.1;overflow-wrap:anywhere}
+  .f span{font-family:var(--serif);font-size:16px;font-weight:600}
+  .mrz{margin-top:14px;font:500 11px ui-monospace, 'Courier New', monospace;letter-spacing:.12em;color:#6b3a42;opacity:.8;white-space:nowrap;overflow:hidden;position:relative}
+
+  .progress{display:flex;align-items:center;gap:12px}
+  .bar{flex:1;height:6px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#fff,#ffb3c0);border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .progress span{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+
+  .section-title{font-size:40px;line-height:1;margin-bottom:-4px}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .booth{
+    background:var(--paper);color:var(--ink);border-radius:16px;padding:12px 12px 14px;
+    position:relative;min-height:188px;display:flex;flex-direction:column;cursor:pointer;
+    border:0;text-align:left;font:inherit;
+    box-shadow:0 10px 24px rgba(0,0,0,.35);transition:transform .15s;
+  }
+  .booth:active{transform:scale(.98)}
+  .booth .num{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);font-weight:700}
+  .booth .name{font-family:var(--serif);font-weight:700;font-size:18px;line-height:1.1;margin-top:4px;color:var(--deep)}
+  .slot{
+    margin-top:auto;align-self:center;width:96px;height:96px;border-radius:50%;
+    border:1.5px dashed rgba(128,26,43,.35);display:grid;place-items:center;position:relative;
+  }
+  .slot .hint{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center;line-height:1.35}
+  .slot svg{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px)}
+  .booth.stamped .slot{border-color:transparent}
+  .booth.stamped .slot .hint{display:none}
+  .stamp-in{animation:thunk .5s cubic-bezier(.2,1.6,.4,1) both}
+  @keyframes thunk{0%{transform:scale(2.2) rotate(var(--r));opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(var(--r));opacity:1}}
+
+  .redeem{
+    border-radius:18px;padding:18px;position:relative;overflow:hidden;
+    background:linear-gradient(135deg, var(--red), var(--wine) 60%, var(--deep));
+    border:1px solid rgba(255,255,255,.18);box-shadow:0 18px 40px rgba(0,0,0,.4);
+  }
+  .redeem .k{font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.8;font-weight:600}
+  .redeem h3{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.1;margin:6px 0 4px}
+  .redeem p{font-size:14px;opacity:.85;line-height:1.45}
+  .redeem .btn{width:100%;margin-top:14px}
+  .redeem.locked{background:rgba(0,0,0,.3);border-style:dashed}
+  .redeem.locked .btn{background:rgba(255,255,255,.12);color:rgba(255,255,255,.6)}
+  .redeem.done{background:var(--paper);color:var(--ink)}
+  .redeem.done .k{color:var(--red);opacity:1}
+  .redeem.done p{opacity:1;color:var(--muted)}
+  .ticket{margin-top:12px;padding-top:12px;border-top:1.5px dashed rgba(128,26,43,.35);display:flex;justify-content:space-between;gap:10px;font-size:12px}
+  .ticket b{display:block;font-family:var(--serif);font-size:17px;color:var(--deep)}
+
+  /* ---------- Volunteer sheet ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:10;display:none;align-items:flex-end;justify-content:center}
+  .scrim.open{display:flex}
+  .sheet{
+    width:100%;max-width:460px;background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;
+    padding:22px 18px calc(22px + env(safe-area-inset-bottom));animation:up .28s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+  .sheet .k{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--red);font-weight:700}
+  .sheet h3{font-family:var(--serif);font-size:26px;line-height:1.1;margin:6px 0 4px;color:var(--deep)}
+  .sheet p{font-size:14px;color:var(--muted);line-height:1.45}
+  .sheet input.field{margin-top:16px;color:var(--ink);background:var(--white);border-color:rgba(128,26,43,.3);letter-spacing:.08em}
+  .sheet input.field::placeholder{color:#b9989d;letter-spacing:normal}
+  .sheet input.field:focus{border-color:var(--red)}
+  .sheet .err{color:var(--red);font-size:13px;font-weight:600;min-height:20px;margin-top:8px}
+  .sheet .row{display:flex;gap:10px;margin-top:6px}
+  .sheet .row .btn{flex:1}
+  .sheet .btn.ghost{color:var(--wine)}
+  .shake{animation:shake .35s}
+  @keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+  .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--white);color:var(--red);font-weight:600;font-size:14px;padding:12px 18px;border-radius:99px;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:.3s;z-index:20;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ---------- Responsive ---------- */
+  /* Very small phones */
+  @media (max-width:350px){
+    .booth{min-height:170px}
+    .slot{width:80px;height:80px}
+    .booth .name{font-size:16px}
+    .photo{width:72px;height:92px}
+  }
+
+  /* Tablets */
+  @media (min-width:640px){
+    .wrap{max-width:720px;padding-left:32px;padding-right:32px}
+    .hero{margin:4px auto 0;width:100%;max-width:560px;
+      -webkit-mask-image:radial-gradient(closest-side, #000 62%, transparent 100%);
+              mask-image:radial-gradient(closest-side, #000 62%, transparent 100%)}
+    .form,.welcome-copy .fine{width:100%;max-width:440px;margin-left:auto;margin-right:auto}
+    .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .scrim{align-items:center;padding:24px}
+    .sheet{max-width:440px;border-radius:22px;padding-bottom:22px;animation:pop .22s cubic-bezier(.2,.8,.2,1)}
+    @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:none;opacity:1}}
+    .arrow.prev{left:-64px}
+    .arrow.next{right:-64px}
+  }
+
+  /* Laptops & desktops */
+  @media (min-width:960px){
+    .wrap{max-width:1120px;padding:32px 48px 56px}
+    .welcome-grid{flex-direction:row;align-items:center;gap:40px;margin-top:8px}
+    .hero{flex:1.1;margin:0;max-width:none}
+    .welcome-copy{flex:1;display:flex;flex-direction:column}
+    .title{margin-top:0;text-align:left;font-size:88px}
+    .tagline{text-align:left;font-size:24px}
+    .form,.welcome-copy .fine{max-width:420px;margin-left:0}
+    .welcome-copy .fine{text-align:left}
+
+    .passport-grid{display:grid;grid-template-columns:400px 1fr;gap:32px;align-items:start;margin-top:24px}
+    .col.side{position:sticky;top:24px}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .booth{min-height:220px;padding:16px}
+    .booth .name{font-size:22px}
+    .slot{width:118px;height:118px}
+    .section-title{font-size:48px}
+  }
+  @media (min-width:1280px){
+    .passport-grid{grid-template-columns:440px 1fr;gap:48px}
+    .booth{min-height:250px}
+    .slot{width:132px;height:132px}
+  }
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 1. WELCOME / NAME -->
+  <section class="screen" id="welcome">
+    <div class="brand"><span class="ted">TED<sup>x</sup></span><br>NgeeAnnPolytechnic <span class="youth">Youth</span></div>
+    <div class="welcome-grid">
+      <div class="hero"><img src="assets/poster.webp" alt="Two figures embracing, painted in red"></div>
+      <div class="welcome-copy">
+        <h1 class="title script">A Better Kind<br>Of Kind</h1>
+        <p class="tagline">A softer world starts with understanding</p>
+        <form class="form" id="nameForm" autocomplete="off">
+          <label class="lbl" for="nameInput">Your name</label>
+          <input class="field" id="nameInput" maxlength="40" placeholder="e.g. Alex Tan" required>
+          <button class="btn" id="startBtn" type="submit" disabled>Continue</button>
+        </form>
+        <p class="fine">Visit all 4 booths to collect your stamps and unlock limited edition merch.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CHARACTER PICKER -->
+  <section class="screen" id="pick">
+    <div class="brand"><span class="ted">TED<sup>x</sup></span><br>NgeeAnnPolytechnic <span class="youth">Youth</span></div>
+    <div class="pick-head">
+      <h2 class="script" id="pickHello">Hi there</h2>
+      <p>Choose a companion for your journey</p>
+    </div>
+    <div class="carousel" id="carousel" tabindex="0" aria-roledescription="carousel" aria-label="Choose your character">
+      <button class="arrow prev" id="prevBtn" type="button" aria-label="Previous character">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="viewport"><div class="track" id="track"></div></div>
+      <button class="arrow next" id="nextBtn" type="button" aria-label="Next character">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="dots" id="dots"></div>
+    <div class="pick-actions">
+      <button class="btn" id="chooseBtn" type="button">This is me</button>
+      <button class="linkish" id="backBtn" type="button">Change my name</button>
+    </div>
+  </section>
+
+  <!-- 3. PASSPORT -->
+  <section class="screen" id="passport">
+    <div class="topbar">
+      <div class="brand"><span class="ted">TED<sup>x</sup></span><br>NgeeAnnPolytechnic <span class="youth">Youth</span></div>
+      <button class="linkish" id="resetBtn" type="button">Not you?</button>
+    </div>
+
+    <div class="passport-grid">
+      <div class="col side">
+        <div class="idpage">
+          <div class="idhead"><span>Passport of Kindness</span><span id="pno">No. 000000</span></div>
+          <div class="idbody">
+            <button class="photo" id="photo" type="button" aria-label="Change character"><img id="photoImg" alt=""></button>
+            <div class="fields">
+              <div class="f"><small>Holder</small><b id="holder">—</b></div>
+              <div class="f"><small>Issued</small><span id="issued">—</span></div>
+              <div class="f"><small>Companion</small><span id="companion">—</span></div>
+            </div>
+          </div>
+          <div class="mrz" id="mrz">P&lt;TEDX&lt;&lt;</div>
+        </div>
+        <div class="progress"><div class="bar"><i id="barFill"></i></div><span id="count">0 / 4</span></div>
+        <div class="redeem locked" id="redeem"></div>
+      </div>
+
+      <div class="col">
+        <h2 class="section-title script">Your stamps</h2>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Volunteer key sheet -->
+<div class="scrim" id="scrim">
+  <form class="sheet" id="sheet" autocomplete="off">
+    <div class="k" id="sheetKicker">Volunteer only</div>
+    <h3 id="sheetTitle">Booth</h3>
+    <p id="sheetText">Hand your phone to the booth volunteer to stamp your passport.</p>
+    <input class="field" id="keyInput" type="password" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Enter booth key">
+    <div class="err" id="err"></div>
+    <div class="row">
+      <button class="btn ghost" type="button" id="cancelBtn">Cancel</button>
+      <button class="btn red" type="submit" id="confirmBtn">Stamp</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG — edit here ============ */
+const BOOTHS = [
+  { id: 1, name: "Walk In My Shoes Challenge", key: "tedx1" },
+  { id: 2, name: "Gachapon",                   key: "tedx2" },
+  { id: 3, name: "Letter Box",                 key: "tedx3" },
+  { id: 4, name: "Instagram Story Kindness Challenge", key: "tedx4" },
+];
+const REDEEM_KEY = "tedx5";
+
+/* Characters: replace the image files in assets/characters/ (or the paths
+   below) when the final art is ready. Leave img empty for a placeholder box. */
+const CHARACTERS = [
+  { name: "Bunny",   img: "assets/characters/1.webp" },
+  { name: "Kitty",   img: "assets/characters/2.webp" },
+  { name: "Owl",     img: "assets/characters/3.webp" },
+  { name: "Star",    img: "assets/characters/4.webp" },
+  { name: "Penguin", img: "assets/characters/5.webp" },
+];
+const STORE = "tedxnp-kind-passport-v1";
+/* ============================================ */
+
+const $ = s => document.querySelector(s);
+let state = load();
+
+function load(){ try { return JSON.parse(localStorage.getItem(STORE)) || null; } catch(e){ return null; } }
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch(e){} }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo(0,0);
+}
+
+/* ---------- 1. Name ---------- */
+const nameInput = $('#nameInput');
+nameInput.addEventListener('input', () => { $('#startBtn').disabled = !nameInput.value.trim(); });
+$('#nameForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = nameInput.value.trim().replace(/\s+/g,' ');
+  if(!name) return;
+  if(state){ state.name = name; }
+  else {
+    state = {
+      name,
+      character: null,
+      no: String(Math.floor(100000 + Math.random()*900000)),
+      issued: Date.now(),
+      stamps: {},
+      redeemedAt: null,
+    };
+  }
+  save();
+  openPicker();
+});
+
+/* ---------- 2. Character picker ---------- */
+let idx = 0;
+const track = $('#track'), dots = $('#dots');
+CHARACTERS.forEach((c, i) => {
+  const s = document.createElement('div');
+  s.className = 'slide';
+  s.setAttribute('role','group');
+  s.setAttribute('aria-label', `${i+1} of ${CHARACTERS.length}: ${c.name}`);
+  s.innerHTML = `<div class="card">
+      ${c.img ? `<img src="${esc(c.img)}" alt="${esc(c.name)}" draggable="false">` : `<div class="ph">Character ${i+1}</div>`}
+      <div class="cname">${esc(c.name)}</div>
+    </div>`;
+  track.appendChild(s);
+  const d = document.createElement('button');
+  d.type = 'button'; d.setAttribute('aria-label', `Show ${c.name}`);
+  d.addEventListener('click', () => go(i));
+  dots.appendChild(d);
+});
+function go(i){
+  idx = (i + CHARACTERS.length) % CHARACTERS.length;
+  track.style.transform = `translateX(${-idx*100}%)`;
+  [...dots.children].forEach((d,j) => d.classList.toggle('on', j === idx));
+}
+$('#prevBtn').addEventListener('click', () => go(idx-1));
+$('#nextBtn').addEventListener('click', () => go(idx+1));
+$('#carousel').addEventListener('keydown', e => {
+  if(e.key === 'ArrowLeft') go(idx-1);
+  if(e.key === 'ArrowRight') go(idx+1);
+});
+/* swipe */
+(() => {
+  let x0 = null, dx = 0;
+  const vp = $('.viewport');
+  vp.addEventListener('pointerdown', e => { x0 = e.clientX; dx = 0; track.style.transition = 'none'; vp.setPointerCapture(e.pointerId); });
+  vp.addEventListener('pointermove', e => {
+    if(x0 === null) return;
+    dx = e.clientX - x0;
+    track.style.transform = `translateX(calc(${-idx*100}% + ${dx}px))`;
+  });
+  const end = () => {
+    if(x0 === null) return;
+    track.style.transition = '';
+    if(Math.abs(dx) > 50) go(idx + (dx < 0 ? 1 : -1)); else go(idx);
+    x0 = null;
+  };
+  vp.addEventListener('pointerup', end);
+  vp.addEventListener('pointercancel', end);
+})();
+
+function openPicker(){
+  $('#pickHello').textContent = `Hi ${state.name.split(' ')[0]}`;
+  go(Number.isInteger(state.character) ? state.character : 0);
+  show('pick');
+}
+$('#chooseBtn').addEventListener('click', () => {
+  state.character = idx; save();
+  showPassport();
+});
+$('#backBtn').addEventListener('click', () => { nameInput.value = state.name; $('#startBtn').disabled = false; show('welcome'); });
+
+/* ---------- 3. Passport ---------- */
+function fmtDate(t){ return new Date(t).toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase(); }
+function fmtTime(t){ return new Date(t).toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'}); }
+
+function showPassport(){
+  const c = CHARACTERS[state.character] || CHARACTERS[0];
+  $('#holder').textContent = state.name;
+  $('#pno').textContent = 'No. ' + state.no;
+  $('#issued').textContent = fmtDate(state.issued);
+  $('#companion').textContent = c.name;
+  const img = $('#photoImg');
+  if(c.img){ img.src = c.img; img.alt = c.name; img.style.display = ''; } else { img.style.display = 'none'; }
+  const mrzName = state.name.toUpperCase().replace(/[^A-Z]+/g,'<');
+  $('#mrz').textContent = ('P<TEDXNP<<' + mrzName + '<'.repeat(60)).slice(0,52);
+  renderGrid();
+  renderRedeem();
+  show('passport');
+}
+$('#photo').addEventListener('click', openPicker);
+
+function stampSVG(b, r){
+  const red = '#A81C34';
+  const label = ('TEDx Ngee Ann Poly Youth • Booth 0' + b.id + ' •').toUpperCase();
+  return `<svg viewBox="0 0 120 120" class="stamp" style="--r:${r}deg;transform:rotate(${r}deg)" aria-hidden="true">
+    <defs><path id="c${b.id}" d="M60,60 m-44,0 a44,44 0 1,1 88,0 a44,44 0 1,1 -88,0"/>
+      <filter id="rough${b.id}"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="${b.id}"/><feDisplacementMap in="SourceGraphic" scale="2.4"/></filter></defs>
+    <g fill="none" stroke="${red}" filter="url(#rough${b.id})" opacity=".88">
+      <circle cx="60" cy="60" r="56" stroke-width="3"/>
+      <circle cx="60" cy="60" r="35" stroke-width="1.5"/>
+      <text fill="${red}" stroke="none" font-family="Inter, sans-serif" font-size="7.6" font-weight="700">
+        <textPath href="#c${b.id}" startOffset="0" textLength="272" lengthAdjust="spacing">${label}</textPath></text>
+      <path d="M60 72 C 46 62, 46 50, 54 48 C 58 47, 60 51, 60 53 C 60 51, 62 47, 66 48 C 74 50, 74 62, 60 72 Z" fill="${red}" stroke="none"/>
+      <text x="60" y="86" text-anchor="middle" fill="${red}" stroke="none" font-family="Cormorant Garamond, serif" font-size="11" font-weight="700" letter-spacing="1.5">0${b.id}</text>
+    </g>
+  </svg>`;
+}
+
+function renderGrid(animateId){
+  const grid = $('#grid');
+  grid.innerHTML = '';
+  BOOTHS.forEach(b => {
+    const s = state.stamps[b.id];
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'booth' + (s ? ' stamped' : '');
+    el.innerHTML = `
+      <div class="num">Booth 0${b.id}</div>
+      <div class="name">${esc(b.name)}</div>
+      <div class="slot">
+        <div class="hint">Tap to<br>get stamp</div>
+        ${s ? stampSVG(b, s.r) : ''}
+      </div>`;
+    if(s && animateId === b.id) el.querySelector('svg').classList.add('stamp-in');
+    el.setAttribute('aria-label', `Booth ${b.id}: ${b.name}${s ? ', stamped' : ', not stamped yet'}`);
+    el.addEventListener('click', () => s ? toast(`Stamped at ${fmtTime(s.at)}`) : openSheet({type:'booth', booth:b}));
+    grid.appendChild(el);
+  });
+  const n = Object.keys(state.stamps).length;
+  $('#count').textContent = `${n} / ${BOOTHS.length}`;
+  $('#barFill').style.width = (n / BOOTHS.length * 100) + '%';
+}
+
+function renderRedeem(){
+  const box = $('#redeem');
+  const n = Object.keys(state.stamps).length;
+  const all = n >= BOOTHS.length;
+  if(state.redeemedAt){
+    box.className = 'redeem done';
+    box.innerHTML = `
+      <div class="k">Redeemed</div>
+      <h3>Thank you for being kind ♥</h3>
+      <p>Your limited edition merch has been collected.</p>
+      <div class="ticket">
+        <div><small>Holder</small><b>${esc(state.name)}</b></div>
+        <div style="text-align:right"><small>Redeemed</small><b>${fmtTime(state.redeemedAt)}</b></div>
+      </div>`;
+    return;
+  }
+  box.className = 'redeem' + (all ? '' : ' locked');
+  box.innerHTML = `
+    <div class="k">Redemption</div>
+    <h3>Limited Edition Merch</h3>
+    <p>${all ? 'All stamps collected! Head to the redemption counter and show this page to a volunteer.'
+             : `Collect ${BOOTHS.length - n} more stamp${BOOTHS.length - n === 1 ? '' : 's'} to unlock.`}</p>
+    <button class="btn" type="button" ${all ? '' : 'disabled'}>${all ? 'Redeem merch' : 'Locked'}</button>`;
+  if(all) box.querySelector('button').addEventListener('click', () => openSheet({type:'redeem'}));
+}
+
+/* ---------- Volunteer sheet ---------- */
+let pending = null;
+function openSheet(p){
+  pending = p;
+  $('#err').textContent = '';
+  $('#keyInput').value = '';
+  if(p.type === 'booth'){
+    $('#sheetKicker').textContent = `Booth 0${p.booth.id} · Volunteer only`;
+    $('#sheetTitle').textContent = p.booth.name;
+    $('#sheetText').textContent = 'Completed the booth? Hand your phone to the volunteer to stamp your passport.';
+    $('#keyInput').placeholder = 'Enter booth key';
+    $('#confirmBtn').textContent = 'Stamp';
+  } else {
+    $('#sheetKicker').textContent = 'Redemption · Volunteer only';
+    $('#sheetTitle').textContent = 'Limited Edition Merch';
+    $('#sheetText').textContent = `Volunteer: hand over the merch to ${state.name}, then enter the redemption key. This can only be done once.`;
+    $('#keyInput').placeholder = 'Enter redemption key';
+    $('#confirmBtn').textContent = 'Redeem';
+  }
+  $('#scrim').classList.add('open');
+  setTimeout(() => $('#keyInput').focus(), 250);
+}
+function closeSheet(){ $('#scrim').classList.remove('open'); pending = null; }
+$('#cancelBtn').addEventListener('click', closeSheet);
+$('#scrim').addEventListener('click', e => { if(e.target.id === 'scrim') closeSheet(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && pending) closeSheet(); });
+
+$('#sheet').addEventListener('submit', e => {
+  e.preventDefault();
+  if(!pending) return;
+  const val = $('#keyInput').value.trim().toLowerCase();
+  const expected = pending.type === 'booth' ? pending.booth.key : REDEEM_KEY;
+  if(val !== expected.toLowerCase()){
+    $('#err').textContent = 'Incorrect key. Please try again.';
+    const s = $('#sheet'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake');
+    $('#keyInput').select();
+    return;
+  }
+  if(pending.type === 'booth'){
+    const b = pending.booth;
+    state.stamps[b.id] = { at: Date.now(), r: Math.round(Math.random()*36 - 18) };
+    save(); closeSheet();
+    renderGrid(b.id); renderRedeem();
+    if(navigator.vibrate) navigator.vibrate(40);
+    const n = Object.keys(state.stamps).length;
+    toast(n === BOOTHS.length ? 'All stamps collected! Merch unlocked ♥' : `Booth 0${b.id} stamped ♥`);
+  } else {
+    state.redeemedAt = Date.now();
+    save(); closeSheet(); renderRedeem();
+    toast('Merch redeemed ♥');
+  }
+});
+
+/* ---------- Reset ---------- */
+$('#resetBtn').addEventListener('click', () => {
+  if(confirm('Start a new passport? This clears all stamps on this device.')){
+    try { localStorage.removeItem(STORE); } catch(e){}
+    state = null;
+    nameInput.value = ''; $('#startBtn').disabled = true;
+    show('welcome');
+  }
+});
+
+/* ---------- Toast ---------- */
+let tt;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- Start ---------- */
+if(state && state.name){
+  Number.isInteger(state.character) ? showPassport() : openPicker();
+} else {
+  show('welcome');
+}
+</script>
+</body>
+</html>
